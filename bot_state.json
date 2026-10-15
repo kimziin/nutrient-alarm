@@ -1,4 +1,12 @@
 {
-  "consecutive_failures": 0,
-  "alerted": false
+  "targets": {
+    "nutrient": {
+      "consecutive_failures": 0,
+      "alerted": false
+    },
+    "mounjaro": {
+      "consecutive_failures": 0,
+      "alerted": false
+    }
+  }
 }
