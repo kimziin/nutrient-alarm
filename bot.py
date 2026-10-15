@@ -1,6 +1,8 @@
 import os
 import sys
 import time
+import json
+import re
 import requests
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
@@ -17,7 +19,11 @@ HEADERS = {
 }
 
 RECORD_FILE = "sent_posts.txt"
+STATE_FILE = "bot_state.json"
 KEEP = 200
+FAIL_THRESHOLD = 3    # 연속 3회 실행 실패 시 경고 (약 15분)
+ROUNDS = 4
+INTERVAL = 60
 
 def load_sent_posts():
     first_run = not os.path.exists(RECORD_FILE)
@@ -32,6 +38,24 @@ def save_sent_posts(post_ids):
     with open(RECORD_FILE, "w", encoding="utf-8") as f:
         for pid in recent:
             f.write(f"{pid}\n")
+
+def load_state():
+    try:
+        with open(STATE_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {"consecutive_failures": 0, "alerted": False}
+
+def save_state(state):
+    with open(STATE_FILE, "w", encoding="utf-8") as f:
+        json.dump(state, f, ensure_ascii=False, indent=2)
+
+def sanitize(msg):
+    msg = str(msg)
+    if DISCORD_WEBHOOK_URL:
+        msg = msg.replace(DISCORD_WEBHOOK_URL, "[웹훅URL]")
+    msg = re.sub(r"https://discord(?:app)?\.com/api/webhooks/\S+", "[웹훅URL]", msg)
+    return msg.replace("`", "'")[:300]
 
 def send_discord_alarm(title, link):
     payload = {
@@ -53,6 +77,20 @@ def send_discord_alarm(title, link):
         print(f"디스코드 응답 오류: {r.status_code}")
         return False
     return False
+
+def send_status_alarm(text):
+    """성공하면 True, 실패하면 False를 반환"""
+    if not DISCORD_WEBHOOK_URL:
+        return False
+    payload = {"content": text, "allowed_mentions": {"parse": []}}
+    try:
+        r = requests.post(DISCORD_WEBHOOK_URL, json=payload, timeout=10)
+        if not r.ok:
+            print(f"상태 알림 응답 오류: {r.status_code}")
+        return r.ok
+    except requests.RequestException as e:
+        print(f"상태 알림 전송 실패: {sanitize(e)}")
+        return False
 
 def check_new_posts():
     if not DISCORD_WEBHOOK_URL:
@@ -102,21 +140,39 @@ def check_new_posts():
     if changed:
         save_sent_posts(sent_ids)
 
-ROUNDS = 4        # 0초, 60초, 120초, 180초 총 4회 실행
-INTERVAL = 60     # 초
-
 if __name__ == "__main__":
     failures = 0
+    last_error = ""
     for i in range(ROUNDS):
         try:
             check_new_posts()
         except Exception as e:
             failures += 1
-            print(f"[{i+1}/{ROUNDS}] 오류: {e}")
+            last_error = sanitize(e)
+            print(f"[{i+1}/{ROUNDS}] 크롤링/처리 오류: {last_error}")
             
         if i < ROUNDS - 1:
             time.sleep(INTERVAL)
-            
-    # 모든 회차가 전부 실패했을 때만 에러 처리
-    if failures == ROUNDS:
+
+    state = load_state()
+    run_failed = (failures == ROUNDS)
+
+    if run_failed:
+        state["consecutive_failures"] += 1
+        if state["consecutive_failures"] >= FAIL_THRESHOLD and not state["alerted"]:
+            sent = send_status_alarm(
+                "🚨 **[영양제 갤러리 알리미 봇 오류]**\n"
+                f"연속 {state['consecutive_failures']}회 실행 실패\n"
+                f"마지막 원인: `{last_error}`\n"
+                "Actions 탭 확인이 필요합니다."
+            )
+            state["alerted"] = sent  # 전송 실패 시 다음 실행에서 재시도
+    else:
+        if state["alerted"]:
+            send_status_alarm("✅ **[영양제 갤러리 알리미 봇]** 정상 작동으로 복구되었습니다.")
+        state = {"consecutive_failures": 0, "alerted": False}
+
+    save_state(state)
+
+    if run_failed:
         sys.exit(1)
