@@ -59,7 +59,7 @@ def sanitize(msg):
 
 def send_discord_alarm(title, link):
     payload = {
-        "content": f"📢 **[영양제 갤러리 특가 알림]**\n**제목:** {title}\n**링크:** {link}",
+        "content": f"📢 **[헬스보충제 갤러리 특가 알림]**\n**제목:** {title}\n**링크:** {link}",
         "allowed_mentions": {"parse": []},
     }
     for _ in range(3):
@@ -161,7 +161,7 @@ if __name__ == "__main__":
         state["consecutive_failures"] += 1
         if state["consecutive_failures"] >= FAIL_THRESHOLD and not state["alerted"]:
             sent = send_status_alarm(
-                "🚨 **[영양제 갤러리 알리미 봇 오류]**\n"
+                "🚨 **[헬스보충제 갤러리 알리미 봇 오류]**\n"
                 f"연속 {state['consecutive_failures']}회 실행 실패\n"
                 f"마지막 원인: `{last_error}`\n"
                 "Actions 탭 확인이 필요합니다."
@@ -169,7 +169,7 @@ if __name__ == "__main__":
             state["alerted"] = sent  # 전송 실패 시 다음 실행에서 재시도
     else:
         if state["alerted"]:
-            send_status_alarm("✅ **[영양제 갤러리 알리미 봇]** 정상 작동으로 복구되었습니다.")
+            send_status_alarm("✅ **[헬스보충제 갤러리 알리미 봇]** 정상 작동으로 복구되었습니다.")
         state = {"consecutive_failures": 0, "alerted": False}
 
     save_state(state)
