@@ -117,6 +117,7 @@ mounjaro_221765
 mounjaro_221814
 mounjaro_222086
 mounjaro_222359
+mounjaro_222572
 nutrient_113534
 nutrient_113609
 nutrient_113749
