@@ -198,9 +198,6 @@ mounjaro_242654
 mounjaro_242675
 mounjaro_242795
 mounjaro_242805
-nutrient_120934
-nutrient_121617
-nutrient_121990
 nutrient_122465
 nutrient_122886
 nutrient_122942
@@ -398,3 +395,6 @@ nutrient_142693
 nutrient_142701
 nutrient_142742
 nutrient_142802
+nutrient_142868
+nutrient_142891
+nutrient_142912
