@@ -1,5 +1,3 @@
-mounjaro_224359
-mounjaro_224398
 mounjaro_224576
 mounjaro_224658
 mounjaro_224939
@@ -198,6 +196,8 @@ mounjaro_244219
 mounjaro_244327
 mounjaro_244386
 mounjaro_244479
+mounjaro_244717
+mounjaro_244722
 nutrient_123682
 nutrient_123809
 nutrient_123839
